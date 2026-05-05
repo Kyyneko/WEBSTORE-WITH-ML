@@ -172,7 +172,8 @@ def seed():
                 days_ago = random.randint(0, 60)
                 status = random.choice(statuses)
                 tracking = f"RR-{random.randint(1000000, 9999999)}" if status in ['Shipped', 'Delivered'] else ""
-                o = Order(user_id=uid, shoe_detail_id=sid, order_date=(get_wita_now() - timedelta(days=days_ago)).date(), amount=shoe.shoe_price * random.randint(1, 3), selected_size=sel_size, selected_color=sel_color, order_status=status, shipping_address=f"Jalan Contoh No. {random.randint(1,100)}, Makassar", tracking_number=tracking, last_updated=get_wita_now())
+                qty = random.randint(1, 3)
+                o = Order(user_id=uid, shoe_detail_id=sid, order_date=(get_wita_now() - timedelta(days=days_ago)).date(), amount=shoe.shoe_price * qty, selected_size=sel_size, selected_color=sel_color, quantity=qty, order_status=status, shipping_address=f"Jalan Contoh No. {random.randint(1,100)}, Makassar", tracking_number=tracking, last_updated=get_wita_now())
                 db.session.add(o)
         db.session.commit()
         print("  200 orders seeded.")

@@ -24,9 +24,10 @@ This project was built with performance, maintainability, and modern aesthetics 
 ### 1. Frontend: React.js
 - **Why React?** We chose React for its component-based architecture, which allows us to build highly reusable UI elements (like product cards, navigation bars, and modals). React's Virtual DOM ensures lightning-fast rendering, providing users with a seamless, SPA (Single Page Application) experience crucial for modern E-Commerce without constant page reloads.
 
-### 2. Styling: Tailwind CSS & SweetAlert2
+### 2. Styling & UI Components: Tailwind CSS, SweetAlert2, & Leaflet
 - **Why Tailwind CSS?** Tailwind is a utility-first CSS framework that enables rapid UI development. Instead of jumping between CSS files and HTML, we styled the application directly within React components. This allowed us to easily implement complex modern designs like **Glassmorphism**, dark themes, and responsive layouts while keeping the final CSS bundle incredibly small.
 - **Why SweetAlert2?** For elegant, non-blocking user feedback (like "Added to Cart" toasts and deletion confirmations) without the hassle of building custom popup systems from scratch.
+- **Why Leaflet & OpenStreetMap?** To provide a premium Checkout experience, we integrated an interactive map for shipping address selection. Leaflet combined with the Nominatim reverse-geocoding API offers a Google Maps-like draggable pin and search functionality, entirely Open-Source and free of API key requirements.
 
 ### 3. Backend: Python & Flask
 - **Why Flask?** Flask is a lightweight, flexible Python micro-framework. Unlike Django, Flask gives us total control over the architecture without unnecessary bloat.

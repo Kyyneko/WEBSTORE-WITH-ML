@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const userId = localStorage.getItem("user_id");
   const token = localStorage.getItem("token");
 
@@ -123,7 +125,7 @@ function Cart() {
               <div className="flex justify-between text-surface-400 text-sm"><span>Shipping</span><span className="text-success-400">Free</span></div>
               <div className="border-t border-surface-700 pt-3 flex justify-between text-white font-bold"><span>Total</span><span className="text-primary-400">{total.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}</span></div>
             </div>
-            <button className="btn-primary w-full">Checkout</button>
+            <button onClick={() => navigate('/checkout/cart')} className="btn-primary w-full">Checkout</button>
           </div>
         </div>
       )}

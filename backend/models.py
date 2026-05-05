@@ -81,6 +81,7 @@ class Order(db.Model):
     amount = db.Column(db.Float, nullable=False)
     selected_size = db.Column(db.String(10), nullable=True, default="")
     selected_color = db.Column(db.String(50), nullable=True, default="")
+    quantity = db.Column(db.Integer, nullable=False, default=1)
     order_status = db.Column(db.String(50), nullable=False)
     shipping_address = db.Column(db.Text, nullable=True, default="")
     tracking_number = db.Column(db.String(100), nullable=True, default="")
