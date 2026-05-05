@@ -1,139 +1,54 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./css/ShoeDetail.css";
+import Swal from "sweetalert2";
 
 function ShoeDetail() {
-  const { id } = useParams(); // Ambil ID dari URL parameter
+  const { id } = useParams();
   const navigate = useNavigate();
-  const [shoe, setShoe] = useState(null); // State untuk menyimpan data sepatu
-  const [error, setError] = useState(null); // State untuk menangani error
+  const [shoe, setShoe] = useState(null);
+  const [error, setError] = useState(null);
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("user_id");
 
-  // Ambil token dari localStorage
-  const token = localStorage.getItem("token"); // Pastikan token disimpan dengan nama "token"
-
-  // Fetch data sepatu ketika komponen pertama kali dimuat
   useEffect(() => {
-    const fetchShoe = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/shoes/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // Sisipkan token di sini
-            },
-          }
-        );
-        setShoe(response.data);
-      } catch (error) {
-        console.error("Error fetching shoe details:", error);
-        setError("Error fetching data. Please try again later.");
-      }
-    };
-
-    fetchShoe();
+    axios.get(`http://localhost:5000/api/shoes/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => setShoe(r.data))
+      .catch(() => setError("Error loading shoe details."));
   }, [id, token]);
 
-  // Menambahkan sepatu ke keranjang dengan API
   const addToCart = async () => {
     try {
-      const userId = 1; // Ganti ini dengan ID user dari sistem autentikasi Anda
-      const data = {
-        id_user: userId,
-        shoe_detail_id: shoe.shoe_detail_id,
-        quantity: 1, // Default quantity
-      };
-
-      const response = await axios.post(
-        "http://localhost:5000/api/cart",
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Sisipkan token di sini
-          },
-        }
-      );
-
-      if (response.status === 201) {
-        alert(`${shoe.shoe_name} added to cart!`);
-      }
-    } catch (error) {
-      console.error("Error adding item to cart:", error);
-      alert(
-        "There was an issue adding the item to your cart. Please try again."
-      );
+      await axios.post("http://localhost:5000/api/cart", { id_user: userId, shoe_detail_id: shoe.shoe_detail_id, quantity: 1 }, { headers: { Authorization: `Bearer ${token}` } });
+      Swal.fire({ toast: true, position: "top-end", title: "Added to Cart!", icon: "success", background: "#1e293b", color: "#f1f5f9", timer: 1500, showConfirmButton: false });
+    } catch (e) {
+      Swal.fire({ title: "Error", text: "Could not add to cart.", icon: "error", background: "#1e293b", color: "#f1f5f9" });
     }
   };
 
-  // Fungsi untuk mengarahkan ke halaman pembayaran
-  const handleBuyNow = () => {
-    navigate(`/payment/${shoe.shoe_detail_id}`);
-  };
+  if (error) return <div className="min-h-[60vh] flex items-center justify-center text-danger-400">{error}</div>;
+  if (!shoe) return (<div className="min-h-[60vh] flex items-center justify-center"><div className="w-10 h-10 border-3 border-primary-500/30 border-t-primary-500 rounded-full animate-spin"></div></div>);
 
-  // Tampilkan error jika terjadi kesalahan
-  if (error) {
-    return <h2>{error}</h2>;
-  }
+  const getCat = (id) => ({ 1: "Sport", 2: "Casual", 3: "Boots", 4: "Heels", 5: "Formal" }[id] || "Other");
 
-  // Tampilkan loading jika data masih kosong
-  if (!shoe) {
-    return <h2>Loading...</h2>;
-  }
-
-  // Menampilkan detail sepatu
   return (
-    <div className="shoe-detail-container">
-      <div className="shoe-detail-content">
-        <div className="shoe-image-section">
-          <img
-            src={`/images/${shoe.shoe_name
-              .replace(/\s+/g, "_")
-              .toLowerCase()}.jpg`}
-            alt={shoe.shoe_name}
-            className="shoe-image"
-          />
-        </div>
-
-        <div className="shoe-info-section">
-          <p className="shoe-category">{getCategoryName(shoe.category_id)}</p>
-          <h1 className="shoe-name">{shoe.shoe_name}</h1>
-          <p className="shoe-price">
-            {shoe.shoe_price.toLocaleString("id-ID", {
-              style: "currency",
-              currency: "IDR",
-            })}
-          </p>
-          <p className="shoe-size">Size: {shoe.shoe_size}</p>
-          <p className="stock-status">In Stock: {shoe.stock}</p>
-
-          <button className="add-to-cart-button" onClick={addToCart}>
-            ADD TO CART
-          </button>
-          <button className="buy-button" onClick={handleBuyNow}>
-            BUY NOW
-          </button>
+    <div className="min-h-screen px-4 py-10 max-w-5xl mx-auto">
+      <div className="glass-card p-6 sm:p-8 animate-fade-in">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <img src={`/images/${shoe.shoe_name}.jpg`} alt={shoe.shoe_name} className="w-full h-80 object-cover rounded-2xl" onError={(e) => { e.target.src = "/images/sneakers_nike.png"; }} />
+          <div className="flex flex-col justify-center">
+            <span className="badge-primary mb-3 w-fit">{getCat(shoe.category_id)}</span>
+            <h1 className="font-display text-3xl font-bold text-white">{shoe.shoe_name}</h1>
+            <p className="text-primary-400 text-2xl font-bold mt-3">{shoe.shoe_price.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}</p>
+            <div className="flex gap-4 mt-4 text-surface-400"><span>Size: {shoe.shoe_size}</span><span>Stock: {shoe.stock}</span></div>
+            <div className="flex gap-3 mt-8">
+              <button onClick={addToCart} className="btn-primary flex-1">Add to Cart</button>
+              <button onClick={() => navigate(-1)} className="btn-outline">Back</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-// Fungsi untuk menentukan nama kategori sepatu berdasarkan ID
-const getCategoryName = (categoryId) => {
-  switch (categoryId) {
-    case 1:
-      return "Sport";
-    case 2:
-      return "Casual";
-    case 3:
-      return "Boots";
-    case 4:
-      return "Heels";
-    case 5:
-      return "Formal";
-    default:
-      return "Unknown";
-  }
-};
-
 export default ShoeDetail;

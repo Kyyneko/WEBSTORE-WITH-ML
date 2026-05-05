@@ -1,10 +1,13 @@
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, Payment, Order
 from datetime import datetime
 
 payments_bp = Blueprint('payments', __name__)
 
+
 @payments_bp.route('/api/payments', methods=['POST'])
+@jwt_required()
 def process_payment():
     data = request.json
 
@@ -37,7 +40,9 @@ def process_payment():
     db.session.commit()
     return jsonify({'message': 'Pembayaran berhasil diproses'}), 201
 
+
 @payments_bp.route('/api/payments/<int:payment_id>', methods=['PUT'])
+@jwt_required()
 def update_payment_status(payment_id):
     data = request.json
     payment = Payment.query.get(payment_id)
@@ -49,7 +54,9 @@ def update_payment_status(payment_id):
         return jsonify({'message': 'Status pembayaran tidak disertakan'}), 400
     return jsonify({'message': 'Pembayaran tidak ditemukan'}), 404
 
+
 @payments_bp.route('/api/payments/<int:payment_id>', methods=['GET'])
+@jwt_required()
 def get_payment(payment_id):
     payment = Payment.query.get(payment_id)
     if payment:
@@ -58,11 +65,13 @@ def get_payment(payment_id):
             'order_id': payment.order_id,
             'payment_method': payment.payment_method,
             'payment_status': payment.payment_status,
-            'payment_date': payment.payment_date.strftime('%Y-%m-%d')  # Format tanggal
+            'payment_date': payment.payment_date.strftime('%Y-%m-%d')
         }), 200
     return jsonify({'message': 'Pembayaran tidak ditemukan'}), 404
 
+
 @payments_bp.route('/api/payments', methods=['GET'])
+@jwt_required()
 def get_payments():
     payments = Payment.query.all()
     if payments:
@@ -71,12 +80,14 @@ def get_payments():
             'order_id': payment.order_id,
             'payment_method': payment.payment_method,
             'payment_status': payment.payment_status,
-            'payment_date': payment.payment_date.strftime('%Y-%m-%d')  # Format tanggal
+            'payment_date': payment.payment_date.strftime('%Y-%m-%d')
         } for payment in payments]
         return jsonify(result), 200
     return jsonify({'message': 'Tidak ada pembayaran ditemukan'}), 404
 
+
 @payments_bp.route('/api/payments/<int:payment_id>', methods=['DELETE'])
+@jwt_required()
 def delete_payment(payment_id):
     payment = Payment.query.get(payment_id)
     if payment:

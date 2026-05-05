@@ -1,317 +1,64 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
-import Modal from "react-modal";
-
-// Set up the modal styles
-Modal.setAppElement("#root");
 
 function AdminUser() {
   const [users, setUsers] = useState([]);
-  const [newUser, setNewUser] = useState({
-    username: "",
-    password: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    role: "User",
-  });
   const [editUser, setEditUser] = useState(null);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const getToken = () => localStorage.getItem("token");
 
-  // Function to get the JWT token from localStorage
-  const getToken = () => {
-    return localStorage.getItem("token"); // Assuming your JWT token is stored as 'token'
-  };
-
-  // Fetch all users from API
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
+  useEffect(() => { fetchUsers(); }, []);
   const fetchUsers = () => {
-    axios
-      .get("http://localhost:5000/api/users", {
-        headers: {
-          Authorization: `Bearer ${getToken()}`, // Add JWT token to Authorization header
-        },
-      })
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error("Error fetching users:", error));
+    axios.get("http://localhost:5000/api/users", { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => setUsers(r.data)).catch(console.error);
   };
 
-  // Create new user
-  const handleCreateUser = () => {
-    axios
-      .post("http://localhost:5000/api/users/register", newUser, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`, // Add JWT token to Authorization header
-        },
-      })
-      .then(() => {
-        fetchUsers();
-        setModalIsOpen(false);
-        setNewUser({
-          username: "",
-          password: "",
-          email: "",
-          first_name: "",
-          last_name: "",
-          role: "User",
-        });
-        Swal.fire("Success!", "User created successfully!", "success");
-      })
-      .catch((error) => {
-        console.error("Error creating user:", error);
-        Swal.fire("Error!", "Failed to create user.", "error");
-      });
+  const handleUpdate = () => {
+    axios.put(`http://localhost:5000/api/users/profile/${editUser.user_id}`, editUser, { headers: { Authorization: `Bearer ${getToken()}` } }).then(() => { fetchUsers(); setEditUser(null); Swal.fire({ toast: true, position: "top-end", title: "Updated!", icon: "success", background: "#1e293b", color: "#f1f5f9", timer: 1200, showConfirmButton: false }); }).catch(() => Swal.fire({ title: "Error!", icon: "error", background: "#1e293b", color: "#f1f5f9" }));
   };
 
-  // Edit existing user
-  const handleEditUser = (user) => {
-    setEditUser(user);
-  };
-
-  const handleUpdateUser = () => {
-    axios
-      .put(
-        `http://localhost:5000/api/users/profile/${editUser.user_id}`,
-        editUser,
-        {
-          headers: {
-            Authorization: `Bearer ${getToken()}`, // Add JWT token to Authorization header
-          },
-        }
-      )
-      .then(() => {
-        fetchUsers();
-        setEditUser(null);
-        Swal.fire("Success!", "User updated successfully!", "success");
-      })
-      .catch((error) => {
-        console.error("Error updating user:", error);
-        Swal.fire("Error!", "Failed to update user.", "error");
-      });
-  };
-
-  // Delete user
-  const handleDeleteUser = (userId) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        axios
-          .delete(`http://localhost:5000/api/users/${userId}`, {
-            headers: {
-              Authorization: `Bearer ${getToken()}`, // Add JWT token to Authorization header
-            },
-          })
-          .then(() => {
-            fetchUsers();
-            Swal.fire("Deleted!", "User has been deleted.", "success");
-          })
-          .catch((error) => {
-            console.error("Error deleting user:", error);
-            Swal.fire("Error!", "Failed to delete user.", "error");
-          });
-      }
+  const handleDelete = (userId) => {
+    Swal.fire({ title: "Delete user?", icon: "warning", showCancelButton: true, confirmButtonColor: "#ef4444", background: "#1e293b", color: "#f1f5f9" }).then(r => {
+      if (r.isConfirmed) axios.delete(`http://localhost:5000/api/users/${userId}`, { headers: { Authorization: `Bearer ${getToken()}` } }).then(() => { fetchUsers(); Swal.fire({ toast: true, position: "top-end", title: "Deleted!", icon: "success", background: "#1e293b", color: "#f1f5f9", timer: 1200, showConfirmButton: false }); });
     });
   };
 
+  const filtered = users.filter(u => u.username?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase()));
+
   return (
-    <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Users</h1>
-      {/* <button
-        onClick={() => setModalIsOpen(true)}
-        className="bg-blue-500 text-white px-4 py-2 rounded-md mb-6 hover:bg-blue-600 transition duration-300"
-      >
-        Create User
-      </button> */}
-      <div className="overflow-x-auto w-full mt-5">
-        <table className="table-auto w-full bg-gray-800 text-white rounded-lg shadow-md">
-          <thead>
-            <tr>
-              <th className="px-4 py-2">ID</th>
-              <th className="px-4 py-2">Username</th>
-              <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">First Name</th>
-              <th className="px-4 py-2">Last Name</th>
-              <th className="px-4 py-2">Role</th>
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div><h1 className="font-display text-3xl font-bold text-white">Users</h1><p className="text-surface-400">{users.length} registered users</p></div>
+        <input type="text" placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} className="input-field !w-64" />
+      </div>
+      <div className="glass-card p-6 overflow-x-auto">
+        <table className="w-full">
+          <thead><tr className="border-b border-surface-700">{["ID", "Username", "Email", "First Name", "Last Name", "Role", "Actions"].map(h => <th key={h} className="text-left py-3 px-4 text-surface-400 text-sm font-medium">{h}</th>)}</tr></thead>
           <tbody>
-            {users.map((user) => (
-              <tr
-                key={user.user_id}
-                className="text-center border-b border-gray-700"
-              >
-                <td className="px-4 py-2">{user.user_id}</td>
-                <td className="px-4 py-2">
-                  {editUser && editUser.user_id === user.user_id ? (
-                    <input
-                      type="text"
-                      value={editUser.username}
-                      onChange={(e) =>
-                        setEditUser({ ...editUser, username: e.target.value })
-                      }
-                      className="p-1 bg-gray-600 rounded-md text-white"
-                    />
-                  ) : (
-                    user.username
-                  )}
-                </td>
-                <td className="px-4 py-2">{user.email}</td>
-                <td className="px-4 py-2">
-                  {editUser && editUser.user_id === user.user_id ? (
-                    <input
-                      type="text"
-                      value={editUser.first_name}
-                      onChange={(e) =>
-                        setEditUser({ ...editUser, first_name: e.target.value })
-                      }
-                      className="p-1 bg-gray-600 rounded-md text-white"
-                    />
-                  ) : (
-                    user.first_name
-                  )}
-                </td>
-                <td className="px-4 py-2">
-                  {editUser && editUser.user_id === user.user_id ? (
-                    <input
-                      type="text"
-                      value={editUser.last_name}
-                      onChange={(e) =>
-                        setEditUser({ ...editUser, last_name: e.target.value })
-                      }
-                      className="p-1 bg-gray-600 rounded-md text-white"
-                    />
-                  ) : (
-                    user.last_name
-                  )}
-                </td>
-                <td className="px-4 py-2">
-                  {editUser && editUser.user_id === user.user_id ? (
-                    <select
-                      value={editUser.role}
-                      onChange={(e) =>
-                        setEditUser({ ...editUser, role: e.target.value })
-                      }
-                      className="p-1 bg-gray-600 rounded-md text-white"
-                    >
-                      <option value="User">User</option>
-                      <option value="Admin">Admin</option>
-                    </select>
-                  ) : (
-                    user.role
-                  )}
-                </td>
-                <td className="px-4 py-2 flex justify-center space-x-2">
-                  {editUser && editUser.user_id === user.user_id ? (
-                    <button
-                      onClick={handleUpdateUser}
-                      className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 transition duration-300"
-                    >
-                      Save
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleEditUser(user)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600 transition duration-300"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleDeleteUser(user.user_id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition duration-300"
-                  >
-                    Delete
-                  </button>
+            {filtered.map(user => (
+              <tr key={user.user_id} className="border-b border-surface-800 hover:bg-surface-800/50 transition-colors">
+                <td className="py-3 px-4 text-surface-300">{user.user_id}</td>
+                <td className="py-3 px-4">{editUser?.user_id === user.user_id ? <input type="text" value={editUser.username} onChange={e => setEditUser({ ...editUser, username: e.target.value })} className="input-field !py-1 !text-sm" /> : <span className="text-white font-medium">{user.username}</span>}</td>
+                <td className="py-3 px-4 text-surface-300">{user.email}</td>
+                <td className="py-3 px-4">{editUser?.user_id === user.user_id ? <input type="text" value={editUser.first_name} onChange={e => setEditUser({ ...editUser, first_name: e.target.value })} className="input-field !py-1 !text-sm" /> : <span className="text-surface-300">{user.first_name}</span>}</td>
+                <td className="py-3 px-4">{editUser?.user_id === user.user_id ? <input type="text" value={editUser.last_name} onChange={e => setEditUser({ ...editUser, last_name: e.target.value })} className="input-field !py-1 !text-sm" /> : <span className="text-surface-300">{user.last_name}</span>}</td>
+                <td className="py-3 px-4"><span className={user.role === "Admin" ? "badge-accent" : "badge-primary"}>{user.role}</span></td>
+                <td className="py-3 px-4">
+                  <div className="flex gap-2">
+                    {editUser?.user_id === user.user_id ? (
+                      <button onClick={handleUpdate} className="px-3 py-1 rounded-lg bg-success-500/20 text-success-400 text-sm hover:bg-success-500/30">Save</button>
+                    ) : (
+                      <button onClick={() => setEditUser(user)} className="px-3 py-1 rounded-lg bg-warning-500/20 text-warning-400 text-sm hover:bg-warning-500/30">Edit</button>
+                    )}
+                    <button onClick={() => handleDelete(user.user_id)} className="px-3 py-1 rounded-lg bg-danger-500/20 text-danger-400 text-sm hover:bg-danger-500/30">Delete</button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {/* Modal for Creating User
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={() => setModalIsOpen(false)}
-        className="bg-gray-800 p-6 rounded-md shadow-lg w-96"
-        overlayClassName="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-      >
-        <h2 className="text-xl font-bold mb-4">Add New User</h2>
-        <input
-          type="text"
-          placeholder="Username"
-          value={newUser.username}
-          onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 mb-2 w-full"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={newUser.password}
-          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 mb-2 w-full"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={newUser.email}
-          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 mb-2 w-full"
-        />
-        <input
-          type="text"
-          placeholder="First Name"
-          value={newUser.first_name}
-          onChange={(e) =>
-            setNewUser({ ...newUser, first_name: e.target.value })
-          }
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 mb-2 w-full"
-        />
-        <input
-          type="text"
-          placeholder="Last Name"
-          value={newUser.last_name}
-          onChange={(e) =>
-            setNewUser({ ...newUser, last_name: e.target.value })
-          }
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 mb-4 w-full"
-        />
-        <select
-          value={newUser.role}
-          onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-          className="p-2 border rounded-md bg-gray-700 text-white mb-4 w-full"
-        >
-          <option value="User">User</option>
-          <option value="Admin">Admin</option>
-        </select>
-        <button
-          onClick={handleCreateUser}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
-        >
-          Create User
-        </button>
-        <button
-          onClick={() => setModalIsOpen(false)}
-          className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition duration-300 ml-2"
-        >
-          Cancel
-        </button>
-      </Modal> */}
     </div>
   );
 }
-
 export default AdminUser;

@@ -1,142 +1,84 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-function Order() {
+function OrderPage() {
   const [orders, setOrders] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; // Sesuaikan dengan jumlah items per halaman yang diinginkan
-
+  const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("user_id"); // Ambil user_id dari localStorage
+  const userId = localStorage.getItem("user_id");
 
-  useEffect(() => {
-    if (userId && token) {
-      fetchOrders();
-    } else {
-      console.error("User ID atau Token tidak ditemukan.");
-    }
-  }, []); // Ambil data order saat pertama kali halaman dimuat
+  useEffect(() => { if (userId && token) fetchOrders(); }, []);
 
   const fetchOrders = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:5000/api/orders/user/${userId}`, // Ganti dengan endpoint yang sesuai
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      setLoading(true);
+      const response = await axios.get(`http://localhost:5000/api/orders/user/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
       setOrders(response.data);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    }
+    } catch (error) { console.error("Error:", error); } finally { setLoading(false); }
   };
 
-  // Logika pagination
-  const indexOfLastOrder = currentPage * itemsPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
-
-  // Menghitung total halaman
-  const totalPages = Math.ceil(orders.length / itemsPerPage);
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
+  const getStatusStyle = (status) => {
+    const s = status?.toLowerCase();
+    if (s === "delivered") return "badge-success";
+    if (s === "shipped" || s === "processing") return "badge-warning";
+    if (s === "cancelled") return "badge-danger";
+    return "badge-primary";
   };
 
-  // Pagination range: Menampilkan beberapa halaman sekitar currentPage
-  const getPaginationRange = () => {
-    const range = 3; // Jumlah halaman yang ditampilkan di sekitar halaman saat ini
-    const start = Math.max(1, currentPage - range);
-    const end = Math.min(totalPages, currentPage + range);
-
-    let pages = [];
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    // Menambahkan "..." di awal atau akhir jika perlu
-    if (start > 1) pages = [1, "..."].concat(pages);
-    if (end < totalPages) pages.push("...");
-
-    return pages;
-  };
+  if (loading) return (<div className="min-h-[60vh] flex items-center justify-center"><div className="w-10 h-10 border-3 border-primary-500/30 border-t-primary-500 rounded-full animate-spin"></div></div>);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col items-center py-8">
-      <h2 className="text-2xl font-bold text-center text-black mb-6">
-        Your Orders
-      </h2>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 px-4 sm:px-6 lg:px-8">
-        {currentOrders.map((order) => (
-          <div
-            key={order.order_id}
-            className="bg-gray-800 rounded-lg p-4 text-center relative group transform transition duration-300 ease-in-out hover:scale-105 hover:shadow-lg"
-          >
-            {/* Menampilkan gambar sepatu */}
-            <img
-              src={`/images/${order.shoe_name}.jpg`} // Menggunakan shoe_name untuk menentukan nama gambar
-              alt={order.shoe_name}
-              className="w-full h-44 object-cover rounded-lg mb-3 transform transition duration-300 ease-in-out group-hover:scale-110 group-hover:border-2 group-hover:border-yellow-500"
-            />
-
-            {/* Menampilkan Nama Sepatu di atas */}
-            <h3 className="text-xl font-bold text-white mb-2">
-              Shoe: {order.shoe_name}
-            </h3>
-
-            <div className="text-center">
-              <p className="text-md text-gray-400 mt-2">
-                Status: {order.order_status}
-              </p>
-              <p className="text-md text-gray-400 mt-2">
-                Order Date: {new Date(order.order_date).toLocaleDateString()}
-              </p>
-              <p className="text-md text-green-400 mt-2">
-                Amount: {order.amount}
-              </p>
-            </div>
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 max-w-7xl mx-auto">
+      <div className="text-center mb-10 animate-fade-in">
+        <h2 className="font-display text-3xl font-bold text-white mb-2">My Orders</h2>
+        <p className="text-surface-400">{orders.length} order{orders.length !== 1 ? "s" : ""}</p>
+      </div>
+      {orders.length === 0 ? (
+        <div className="text-center py-20">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-surface-800 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
           </div>
-        ))}
-      </div>
-
-      {/* Pagination */}
-      <div className="pagination flex justify-center mt-8 space-x-2">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-4 py-2 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
-        >
-          Previous
-        </button>
-
-        {getPaginationRange().map((page, index) => (
-          <button
-            key={index}
-            onClick={() => handlePageChange(page)}
-            className={`px-4 py-2 rounded ${
-              page === currentPage
-                ? "bg-blue-500 text-white"
-                : "bg-gray-700 text-gray-300"
-            } hover:bg-blue-600 transition-colors`}
-            disabled={page === "..."}
-          >
-            {page}
-          </button>
-        ))}
-
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
-        >
-          Next
-        </button>
-      </div>
+          <p className="text-surface-400 text-lg">No orders yet</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {orders.map((order, idx) => (
+            <div key={order.order_id} className="glass-card p-5 animate-fade-in" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-surface-500 text-xs">Order #{order.order_id}</p>
+                  <h3 className="text-white font-semibold mt-1">{order.shoe_name}</h3>
+                  <div className="flex gap-2 text-surface-400 text-xs mt-2">
+                    {order.selected_size && <span className="bg-surface-800 px-2 py-0.5 rounded border border-surface-700">Size: {order.selected_size}</span>}
+                    {order.selected_color && <span className="bg-surface-800 px-2 py-0.5 rounded border border-surface-700">Color: {order.selected_color}</span>}
+                  </div>
+                </div>
+                <span className={getStatusStyle(order.order_status)}>{order.order_status}</span>
+              </div>
+              <img src={`/images/${order.shoe_name}.jpg`} alt={order.shoe_name} className="w-full h-40 object-cover rounded-xl mb-4" onError={(e) => { e.target.src = "/images/sneakers_nike.png"; }} />
+              <div className="bg-surface-800/50 rounded-xl p-3 mb-4 text-sm border border-surface-700">
+                <div className="flex justify-between items-center border-b border-surface-700 pb-2 mb-2">
+                  <span className="text-surface-400">Tracking:</span>
+                  <span className="font-mono text-white tracking-wider bg-surface-900 px-2 py-1 rounded">
+                    {order.tracking_number || "Not yet shipped"}
+                  </span>
+                </div>
+                <div className="text-surface-300">
+                  <p className="text-surface-500 mb-1">Shipping to:</p>
+                  <p className="line-clamp-2">{order.shipping_address || "No address provided"}</p>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-surface-400 text-sm">{new Date(order.order_date).toLocaleDateString("id-ID", { year: "numeric", month: "short", day: "numeric" })}</p>
+                </div>
+                <p className="text-primary-400 font-bold">{order.amount.toLocaleString("id-ID", { style: "currency", currency: "IDR" })}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-export default Order;
+export default OrderPage;

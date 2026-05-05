@@ -2,13 +2,16 @@ Flask
 Flask-SQLAlchemy
 Flask-Migrate
 Flask-Cors
+Flask-JWT-Extended
 pymysql
 pytz
 pandas
 joblib
 numpy
 scikit-learn
+imbalanced-learn
 matplotlib
 seaborn
 SQLAlchemy
-Flask-JWT-Extended
+python-dotenv
+werkzeug

@@ -1,207 +1,53 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import Swal from 'sweetalert2';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 function AdminInteractions() {
   const [interactions, setInteractions] = useState([]);
-  const [newInteraction, setNewInteraction] = useState({
-    id_user: '',
-    shoe_detail_id: '',
-    interaction_type: ''
-  });
-  const [editInteraction, setEditInteraction] = useState(null);
+  const [stats, setStats] = useState({ view: 0, wishlist: 0, cart: 0, order: 0 });
+  const token = localStorage.getItem("token");
+  const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => {
-    fetchInteractions();
-  }, []);
-
+  useEffect(() => { fetchInteractions(); }, []);
   const fetchInteractions = () => {
-    axios.get('http://localhost:5000/api/user_interactions') // Use the correct endpoint
-      .then(response => {
-        setInteractions(response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching interactions:', error);
-      });
+    axios.get("http://localhost:5000/api/user_interactions", { headers }).then(r => {
+      const data = Array.isArray(r.data) ? r.data : [];
+      setInteractions(data);
+      setStats({ view: data.filter(i => i.interaction_type === "view").length, wishlist: data.filter(i => i.interaction_type === "wishlist").length, cart: data.filter(i => i.interaction_type === "cart").length, order: data.filter(i => i.interaction_type === "order").length });
+    }).catch(console.error);
   };
-
-  const handleCreateInteraction = () => {
-    // Validate before creating interaction
-    if (!newInteraction.id_user || !newInteraction.shoe_detail_id || !newInteraction.interaction_type) {
-      Swal.fire('Error!', 'All fields are required.', 'error');
-      return;
-    }
-
-    axios.post('http://localhost:5000/api/user_interactions', newInteraction) // Use the correct endpoint
-      .then(() => {
-        fetchInteractions();
-        setNewInteraction({ id_user: '', shoe_detail_id: '', interaction_type: '' });
-        Swal.fire('Success!', 'Interaction created successfully!', 'success');
-      })
-      .catch(error => {
-        console.error('Error creating interaction:', error);
-        Swal.fire('Error!', 'Failed to create interaction.', 'error');
-      });
-  };
-
-  const handleEditInteraction = (interaction) => {
-    setEditInteraction(interaction);
-  };
-
-  const handleUpdateInteraction = () => {
-    // Validate before updating interaction
-    if (!editInteraction.id_user || !editInteraction.shoe_detail_id || !editInteraction.interaction_type) {
-      Swal.fire('Error!', 'All fields are required.', 'error');
-      return;
-    }
-
-    axios.put(`http://localhost:5000/api/user_interactions/${editInteraction.interaction_id}`, editInteraction) // Use the correct endpoint
-      .then(() => {
-        fetchInteractions();
-        setEditInteraction(null);
-        Swal.fire('Success!', 'Interaction updated successfully!', 'success');
-      })
-      .catch(error => {
-        console.error('Error updating interaction:', error);
-        Swal.fire('Error!', 'Failed to update interaction.', 'error');
-      });
-  };
-
-  const handleDeleteInteraction = (interactionId) => {
-    Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        axios.delete(`http://localhost:5000/api/user_interactions/${interactionId}`) // Use the correct endpoint
-          .then(() => {
-            fetchInteractions();
-            Swal.fire('Deleted!', 'Interaction has been deleted.', 'success');
-          })
-          .catch(error => {
-            console.error('Error deleting interaction:', error);
-            Swal.fire('Error!', 'Failed to delete interaction.', 'error');
-          });
-      }
+  const handleDelete = (id) => {
+    Swal.fire({ title: "Delete?", icon: "warning", showCancelButton: true, confirmButtonColor: "#ef4444", background: "#1e293b", color: "#f1f5f9" }).then(r => {
+      if (r.isConfirmed) axios.delete(`http://localhost:5000/api/user_interactions/${id}`, { headers }).then(() => { fetchInteractions(); Swal.fire({ toast: true, position: "top-end", title: "Deleted!", icon: "success", background: "#1e293b", color: "#f1f5f9", timer: 1200, showConfirmButton: false }); });
     });
   };
+  const getTypeStyle = (t) => ({ view: "badge bg-blue-500/20 text-blue-400", wishlist: "badge bg-pink-500/20 text-pink-400", cart: "badge bg-yellow-500/20 text-yellow-400", order: "badge bg-green-500/20 text-green-400" }[t] || "badge-primary");
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center p-8">
-      <h1 className="text-3xl font-bold mb-6">User Interactions</h1>
-      <div className="flex space-x-3 mb-6">
-        <input
-          type="text"
-          placeholder="User ID"
-          value={newInteraction.id_user}
-          onChange={(e) => setNewInteraction({ ...newInteraction, id_user: e.target.value })}
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          placeholder="Shoe Detail ID"
-          value={newInteraction.shoe_detail_id}
-          onChange={(e) => setNewInteraction({ ...newInteraction, shoe_detail_id: e.target.value })}
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          placeholder="Interaction Type"
-          value={newInteraction.interaction_type}
-          onChange={(e) => setNewInteraction({ ...newInteraction, interaction_type: e.target.value })}
-          className="p-2 border rounded-md bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button 
-          onClick={handleCreateInteraction}
-          className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 transition duration-300"
-        >
-          Create Interaction
-        </button>
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 max-w-7xl mx-auto">
+      <div className="mb-8"><h1 className="font-display text-3xl font-bold text-white">User Interactions</h1><p className="text-surface-400">{interactions.length} total interactions</p></div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        {[["Views", stats.view, "👁️", "from-blue-500 to-blue-600"], ["Wishlists", stats.wishlist, "💜", "from-pink-500 to-pink-600"], ["Cart Adds", stats.cart, "🛒", "from-yellow-500 to-yellow-600"], ["Orders", stats.order, "✅", "from-green-500 to-green-600"]].map(([label, val, icon, gradient]) => (
+          <div key={label} className="glass-card p-4"><div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-lg`}>{icon}</div><div><p className="text-surface-400 text-xs">{label}</p><p className="text-white text-xl font-bold">{val}</p></div></div></div>
+        ))}
       </div>
-      <table className="min-w-full bg-gray-800 text-white rounded-lg shadow-md">
-        <thead>
-          <tr className="bg-gray-900 text-left">
-            <th className="px-4 py-2">ID</th>
-            <th className="px-4 py-2">User ID</th>
-            <th className="px-4 py-2">Shoe Detail ID</th>
-            <th className="px-4 py-2">Type</th>
-            <th className="px-4 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {interactions.map(interaction => (
-            <tr key={interaction.interaction_id} className="text-center border-b border-gray-700 hover:bg-gray-700">
-              <td className="px-4 py-2">{interaction.interaction_id}</td>
-              <td className="px-4 py-2">
-                {editInteraction && editInteraction.interaction_id === interaction.interaction_id ? (
-                  <input
-                    type="text"
-                    value={editInteraction.id_user}
-                    onChange={(e) => setEditInteraction({ ...editInteraction, id_user: e.target.value })}
-                    className="p-1 bg-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  interaction.id_user
-                )}
-              </td>
-              <td className="px-4 py-2">
-                {editInteraction && editInteraction.interaction_id === interaction.interaction_id ? (
-                  <input
-                    type="text"
-                    value={editInteraction.shoe_detail_id}
-                    onChange={(e) => setEditInteraction({ ...editInteraction, shoe_detail_id: e.target.value })}
-                    className="p-1 bg-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  interaction.shoe_detail_id
-                )}
-              </td>
-              <td className="px-4 py-2">
-                {editInteraction && editInteraction.interaction_id === interaction.interaction_id ? (
-                  <input
-                    type="text"
-                    value={editInteraction.interaction_type}
-                    onChange={(e) => setEditInteraction({ ...editInteraction, interaction_type: e.target.value })}
-                    className="p-1 bg-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                ) : (
-                  interaction.interaction_type
-                )}
-              </td>
-              <td className="px-4 py-2 flex justify-center space-x-2">
-                {editInteraction && editInteraction.interaction_id === interaction.interaction_id ? (
-                  <button 
-                    onClick={handleUpdateInteraction}
-                    className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 transition duration-300"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => handleEditInteraction(interaction)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600 transition duration-300"
-                  >
-                    Edit
-                  </button>
-                )}
-                <button 
-                  onClick={() => handleDeleteInteraction(interaction.interaction_id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition duration-300"
-                >
-                  Delete
-                </button>
-              </td>
+      <div className="glass-card p-6 overflow-x-auto">
+        <table className="w-full">
+          <thead><tr className="border-b border-surface-700">{["ID", "User ID", "Shoe ID", "Type", "Date", "Actions"].map(h => <th key={h} className="text-left py-3 px-4 text-surface-400 text-sm font-medium">{h}</th>)}</tr></thead>
+          <tbody>{interactions.slice(0, 100).map(i => (
+            <tr key={i.interaction_id} className="border-b border-surface-800 hover:bg-surface-800/50 transition-colors">
+              <td className="py-3 px-4 text-surface-300">{i.interaction_id}</td>
+              <td className="py-3 px-4 text-white">{i.id_user}</td>
+              <td className="py-3 px-4 text-surface-300">{i.shoe_detail_id}</td>
+              <td className="py-3 px-4"><span className={getTypeStyle(i.interaction_type)}>{i.interaction_type}</span></td>
+              <td className="py-3 px-4 text-surface-300 text-sm">{i.interaction_date}</td>
+              <td className="py-3 px-4"><button onClick={() => handleDelete(i.interaction_id)} className="px-3 py-1 rounded-lg bg-danger-500/20 text-danger-400 text-sm hover:bg-danger-500/30">Delete</button></td>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          ))}</tbody>
+        </table>
+        {interactions.length > 100 && <p className="text-surface-500 text-sm text-center mt-4">Showing first 100 of {interactions.length} interactions</p>}
+      </div>
     </div>
   );
 }
-
 export default AdminInteractions;

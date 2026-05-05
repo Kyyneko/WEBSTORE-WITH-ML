@@ -1,70 +1,74 @@
-# Getting Started with Create React App
+# 👟 R&R Webstore (E-Commerce with AI Recommendation)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Welcome to **R&R Webstore**, a modern, full-stack E-Commerce platform built with a cutting-edge technology stack and integrated Machine Learning for personalized product recommendations.
 
-## Available Scripts
+![R&R Webstore Preview](/images/sneakers_nike.png)
 
-In the project directory, you can run:
+## 🚀 Public Demo & Testing
+If you would like to test this application locally, we have pre-configured dummy accounts for you to explore the features immediately without needing to register.
 
-### `npm start`
+**Regular User Account (For exploring products, cart, and AI recommendations):**
+- **Username:** `user1` (You can also try `user2`, `user3`, up to `user20`)
+- **Password:** `user123`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+**Admin Account (For managing products, orders, and users):**
+- **Username:** `admin`
+- **Password:** `admin123`
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 🛠️ Technology Stack & Architecture Rationale
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This project was built with performance, maintainability, and modern aesthetics in mind. Here is a complete breakdown of the tech stack chosen and the reasoning behind it:
 
-### `npm run build`
+### 1. Frontend: React.js
+- **Why React?** We chose React for its component-based architecture, which allows us to build highly reusable UI elements (like product cards, navigation bars, and modals). React's Virtual DOM ensures lightning-fast rendering, providing users with a seamless, SPA (Single Page Application) experience crucial for modern E-Commerce without constant page reloads.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 2. Styling: Tailwind CSS & SweetAlert2
+- **Why Tailwind CSS?** Tailwind is a utility-first CSS framework that enables rapid UI development. Instead of jumping between CSS files and HTML, we styled the application directly within React components. This allowed us to easily implement complex modern designs like **Glassmorphism**, dark themes, and responsive layouts while keeping the final CSS bundle incredibly small.
+- **Why SweetAlert2?** For elegant, non-blocking user feedback (like "Added to Cart" toasts and deletion confirmations) without the hassle of building custom popup systems from scratch.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 3. Backend: Python & Flask
+- **Why Flask?** Flask is a lightweight, flexible Python micro-framework. Unlike Django, Flask gives us total control over the architecture without unnecessary bloat.
+- **Why Python?** The primary reason for choosing Python on the backend is **Machine Learning**. By keeping the API and the ML models in the same language and ecosystem, we eliminated the need to build complex microservices just to serve AI recommendations.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 4. Database: SQLite & SQLAlchemy (ORM)
+- **Why SQLite?** For rapid development and public demonstration, SQLite provides a zero-configuration, serverless database that lives directly in a local file (`webstore.db`). This makes the project extremely easy to clone and run.
+- **Why SQLAlchemy?** As an Object Relational Mapper (ORM), SQLAlchemy abstracts raw SQL queries into Python objects. This not only speeds up development and prevents SQL injection attacks but also ensures that the application can easily be migrated to a production-grade database like **PostgreSQL** or **MySQL** in the future simply by changing a single connection string.
 
-### `npm run eject`
+### 5. Security & Authentication: JWT (JSON Web Tokens)
+- **Why JWT?** JWT allows for stateless authentication. The server doesn't need to store session data. Once a user logs in, they receive a signed token used to securely authorize API requests. This decoupling is perfect for a separated React (Client) and Flask (API) architecture.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 6. Artificial Intelligence: Scikit-Learn
+- **Why Scikit-Learn?** This robust Python library powers the "Recommended For You" section. By analyzing user interaction data (what they view, add to cart, and buy), the backend trains a recommendation model to serve personalized product suggestions dynamically.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 💻 How to Run Locally
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Prerequisites
+- Node.js (v14+)
+- Python (3.8+)
 
-## Learn More
+### 1. Start the Backend (Flask)
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pip install -r requirements.txt
+python seed_database.py   # To generate dummy users, products, and variants
+python app.py
+```
+*The API will run on `http://localhost:5000`*
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### 2. Start the Frontend (React)
+```bash
+# Open a new terminal instance in the root directory
+npm install
+npm start
+```
+*The web app will run on `http://localhost:3000`*
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Developed with ❤️ for a modern E-Commerce experience.**

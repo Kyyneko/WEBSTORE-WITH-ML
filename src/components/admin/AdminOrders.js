@@ -4,183 +4,107 @@ import Swal from "sweetalert2";
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
-  const [newOrder, setNewOrder] = useState({
-    user_id: localStorage.getItem("user_id"), // Ambil user_id dari localStorage
-    shoe_detail_id: "",
-    order_status: "",
-    order_date: "",
-    amount: "",
-  });
-  const [editOrder, setEditOrder] = useState(null);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [editTracking, setEditTracking] = useState("");
 
-  // Set Axios header untuk semua permintaan
-  axios.defaults.headers.common[
-    "Authorization"
-  ] = `Bearer ${localStorage.getItem("token")}`;
+  const token = localStorage.getItem("token");
+  const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = () => {
-    axios
-      .get("http://localhost:5000/api/orders")
-      .then((response) => {
-        setOrders(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching orders:", error);
-      });
+  useEffect(() => { fetchOrders(); }, []);
+  
+  const fetchOrders = () => { 
+    axios.get("http://localhost:5000/api/orders", { headers })
+      .then(r => setOrders(Array.isArray(r.data) ? r.data : []))
+      .catch(console.error); 
   };
 
-  const handleCreateOrder = () => {
-    axios
-      .post("http://localhost:5000/api/orders", newOrder)
-      .then(() => {
-        fetchOrders();
-        setNewOrder({
-          user_id: localStorage.getItem("user_id"),
-          shoe_detail_id: "",
-          order_status: "",
-          order_date: "",
-          amount: "",
-        });
-        Swal.fire("Success!", "Order created successfully!", "success");
-      })
-      .catch((error) => {
-        console.error("Error creating order:", error);
-        Swal.fire("Error!", "Failed to create order.", "error");
-      });
-  };
-
-  const handleEditOrder = (order) => {
-    setEditOrder(order);
-  };
-
-  const handleUpdateOrder = () => {
-    axios
-      .put(`http://localhost:5000/api/orders/${editOrder.order_id}`, {
-        order_status: editOrder.order_status,
-        order_date: editOrder.order_date,
-      })
-      .then(() => {
-        fetchOrders();
-        setEditOrder(null);
-        Swal.fire("Success!", "Order updated successfully!", "success");
-      })
-      .catch((error) => {
-        console.error("Error updating order:", error);
-        Swal.fire("Error!", "Failed to update order.", "error");
-      });
-  };
-
-  const handleDeleteOrder = (orderId) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        axios
-          .delete(`http://localhost:5000/api/orders/${orderId}`)
-          .then(() => {
-            fetchOrders();
-            Swal.fire("Deleted!", "Order has been deleted.", "success");
-          })
-          .catch((error) => {
-            console.error("Error deleting order:", error);
-            Swal.fire("Error!", "Failed to delete order.", "error");
-          });
-      }
+  const handleDelete = (id) => {
+    Swal.fire({ title: "Delete order?", icon: "warning", showCancelButton: true, confirmButtonColor: "#ef4444", background: "#1e293b", color: "#f1f5f9" }).then(r => {
+      if (r.isConfirmed) axios.delete(`http://localhost:5000/api/orders/${id}`, { headers }).then(() => { fetchOrders(); Swal.fire({ toast: true, position: "top-end", title: "Deleted!", icon: "success", background: "#1e293b", color: "#f1f5f9", timer: 1200, showConfirmButton: false }); });
     });
   };
 
-  return (
-    <div className="bg-gray-900 text-white min-h-screen flex flex-col items-center p-8">
-      <h1 className="text-3xl font-bold mb-10">Daftar Pesanan</h1>
+  const openEditModal = (order) => {
+    setEditingOrder(order);
+    setEditStatus(order.order_status);
+    setEditTracking(order.tracking_number || "");
+  };
 
-      <table className="min-w-full bg-gray-800 text-white mt-5 rounded-lg shadow-md">
-        <thead>
-          <tr className="bg-gray-900 text-left">
-            <th className="px-4 py-2">Order ID</th>
-            <th className="px-4 py-2">User ID</th>
-            <th className="px-4 py-2">Shoe Detail ID</th>
-            <th className="px-4 py-2">Status</th>
-            <th className="px-4 py-2">Date</th>
-            <th className="px-4 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr
-              key={order.order_id}
-              className="text-center border-b border-gray-700 hover:bg-gray-700"
-            >
-              <td className="px-4 py-2">{order.order_id}</td>
-              <td className="px-4 py-2">{order.user_id}</td>
-              <td className="px-4 py-2">{order.shoe_detail_id}</td>
-              <td className="px-4 py-2">
-                {editOrder && editOrder.order_id === order.order_id ? (
-                  <input
-                    type="text"
-                    value={editOrder.order_status}
-                    onChange={(e) =>
-                      setEditOrder({
-                        ...editOrder,
-                        order_status: e.target.value,
-                      })
-                    }
-                    className="p-1 bg-gray-600 rounded-md text-white"
-                  />
-                ) : (
-                  order.order_status
-                )}
-              </td>
-              <td className="px-4 py-2">
-                {editOrder && editOrder.order_id === order.order_id ? (
-                  <input
-                    type="date"
-                    value={editOrder.order_date}
-                    onChange={(e) =>
-                      setEditOrder({ ...editOrder, order_date: e.target.value })
-                    }
-                    className="p-1 bg-gray-600 rounded-md text-white"
-                  />
-                ) : (
-                  new Date(order.order_date).toLocaleDateString()
-                )}
-              </td>
-              <td className="px-4 py-2 flex justify-center space-x-2">
-                {editOrder && editOrder.order_id === order.order_id ? (
-                  <button
-                    onClick={handleUpdateOrder}
-                    className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleEditOrder(order)}
-                    className="bg-yellow-500 text-white px-3 py-1 rounded-md hover:bg-yellow-600"
-                  >
-                    Edit
-                  </button>
-                )}
-                <button
-                  onClick={() => handleDeleteOrder(order.order_id)}
-                  className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
-                >
-                  Delete
-                </button>
+  const handleUpdate = async () => {
+    try {
+      await axios.put(`http://localhost:5000/api/orders/${editingOrder.order_id}`, {
+        order_status: editStatus,
+        tracking_number: editTracking
+      }, { headers });
+      
+      setEditingOrder(null);
+      fetchOrders();
+      Swal.fire({ toast: true, position: "top-end", title: "Updated!", text: "Order status updated successfully", icon: "success", background: "#1e293b", color: "#f1f5f9", timer: 1500, showConfirmButton: false });
+    } catch (error) {
+      Swal.fire({ title: "Error", text: "Failed to update order", icon: "error", background: "#1e293b", color: "#f1f5f9" });
+    }
+  };
+
+  const getStatusStyle = (s) => { s = s?.toLowerCase(); return s === "delivered" ? "badge-success" : s === "shipped" || s === "processing" ? "badge-warning" : s === "cancelled" ? "badge-danger" : "badge-primary"; };
+
+  return (
+    <div className="min-h-screen px-4 sm:px-6 lg:px-8 py-10 max-w-7xl mx-auto">
+      <div className="mb-8"><h1 className="font-display text-3xl font-bold text-white">Orders</h1><p className="text-surface-400">{orders.length} orders</p></div>
+      <div className="glass-card p-6 overflow-x-auto">
+        <table className="w-full">
+          <thead><tr className="border-b border-surface-700">{["ID", "User ID", "Status", "Date", "Amount", "Tracking", "Actions"].map(h => <th key={h} className="text-left py-3 px-4 text-surface-400 text-sm font-medium">{h}</th>)}</tr></thead>
+          <tbody>{orders.map(o => (
+            <tr key={o.order_id} className="border-b border-surface-800 hover:bg-surface-800/50 transition-colors">
+              <td className="py-3 px-4 text-surface-300">{o.order_id}</td>
+              <td className="py-3 px-4 text-white">{o.user_id}</td>
+              <td className="py-3 px-4"><span className={getStatusStyle(o.order_status)}>{o.order_status}</span></td>
+              <td className="py-3 px-4 text-surface-300">{o.order_date}</td>
+              <td className="py-3 px-4 text-primary-400 font-medium">{Number(o.amount).toLocaleString("id-ID", { style: "currency", currency: "IDR" })}</td>
+              <td className="py-3 px-4 font-mono text-xs text-surface-300">{o.tracking_number || "-"}</td>
+              <td className="py-3 px-4 flex gap-2">
+                <button onClick={() => openEditModal(o)} className="px-3 py-1 rounded-lg bg-primary-500/20 text-primary-400 text-sm hover:bg-primary-500/30">Edit</button>
+                <button onClick={() => handleDelete(o.order_id)} className="px-3 py-1 rounded-lg bg-danger-500/20 text-danger-400 text-sm hover:bg-danger-500/30">Del</button>
               </td>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          ))}</tbody>
+        </table>
+      </div>
+
+      {editingOrder && (
+        <div className="modal-overlay" onClick={() => setEditingOrder(null)}>
+          <div className="modal-content !max-w-md" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-2xl font-bold text-white mb-6">Update Order #{editingOrder.order_id}</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-surface-300 mb-2">Order Status</label>
+              <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className="input-field">
+                <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-surface-300 mb-2">Tracking Number</label>
+              <input 
+                type="text" 
+                value={editTracking} 
+                onChange={(e) => setEditTracking(e.target.value)} 
+                className="input-field font-mono"
+                placeholder="e.g. JNE-123456789"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button className="btn-primary flex-1" onClick={handleUpdate}>Save Changes</button>
+              <button className="btn-ghost" onClick={() => setEditingOrder(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
